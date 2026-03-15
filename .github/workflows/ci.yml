@@ -1,0 +1,41 @@
+name: Healthcare ETL Pipeline CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Lint & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Lint with flake8
+        run: |
+          flake8 ingestion/ transforms/ dags/ --max-line-length=120 --ignore=E501,W503
+
+      - name: Format check with black
+        run: |
+          black --check ingestion/ transforms/ dags/
+
+      - name: Run unit tests
+        run: |
+          pytest tests/ -v --cov=ingestion --cov=transforms --cov-report=xml
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          file: coverage.xml
